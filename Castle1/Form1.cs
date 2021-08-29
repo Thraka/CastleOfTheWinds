@@ -1,19 +1,16 @@
-﻿using System;
+﻿using GoRogue;
+using GoRogue.GameFramework;
+using GoRogue.MapViews;
+
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Numerics;
+using System.Reflection;
 using System.Windows.Forms;
 
-using CastleOfTheWinds;
-using GoRogue;
-using GoRogue.GameFramework;
-
-namespace Castle1
+namespace CastleOfTheWinds
 {
     public partial class Form1 : Form
     {
@@ -31,7 +28,7 @@ namespace Castle1
             Map = game.Map;
             Player = game.Player;
 
-            Map.ObjectMoved += Map_ObjectMoved;
+            Player.Moved += Map_ObjectMoved;
             Game.MessageLogged += (sender, message) => Log(message);
            
             keyMap[Keys.Up] = InputCommand.MoveUp;
@@ -42,6 +39,8 @@ namespace Castle1
             keyMap[Keys.PageDown] = InputCommand.MoveUpRight;
             keyMap[Keys.End] = InputCommand.MoveDownLeft;
             keyMap[Keys.Next] = InputCommand.MoveDownRight;
+
+            RedrawMap();
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -65,7 +64,7 @@ namespace Castle1
 
         private void Map_ObjectMoved(object? sender, ItemMovedEventArgs<IGameObject> eventArgs)
         {
-            Log($"ObjectMoved: {eventArgs.Item.ID} from {eventArgs.OldPosition} to {eventArgs.NewPosition}");
+            RedrawMap();
         }
 
         private void Log(string message)
@@ -76,19 +75,95 @@ namespace Castle1
         private void RedrawMap()
         {
             var scale = 32;
-            this.picture.Width = scale * Map.Width;
-            this.picture.Height = scale * Map.Height;
-            Map.CalculateFOV(Player.Position, 1);
 
-            var wallImage = Bitmap.FromStream(new MemoryStream(Bitmaps._2));
+            var bitmap = new Bitmap(scale * Map.Width, scale * Map.Height);
+            var graphics = Graphics.FromImage(bitmap);
 
-            var graphics = this.picture.CreateGraphics();
             graphics.Clear(Color.White);
-            graphics.DrawImage()
-            foreach (var coord in Map.FOV.CurrentFOV)
+
+            PaintExposedTerrain(graphics, scale);
+            PaintVisibleObjects(graphics, scale);
+
+            this.picture.Image = bitmap;
+            this.picture.Width = bitmap.Width;
+            this.picture.Height = bitmap.Height;
+        }
+
+        private void PaintExposedTerrain(Graphics graphics, int scale)
+        {
+            foreach (var position in Map.Terrain.Positions())
             {
-               
+                if (Map.Explored[position])
+                {
+                    if(Map.Terrain[position] is not TerrainObject terrainObject)
+                    {
+                        continue;
+                    }
+
+                    var scaledSize = terrainObject.Size * scale;
+
+                    graphics.DrawImage(terrainObject.GetImage(), position.X * scale, position.Y * scale, scaledSize.Width, scaledSize.Height);
+                }
             }
+        }
+        private void PaintVisibleObjects(Graphics graphics, int scale)
+        {
+            var sizeOne = new Size(1, 1);
+            var sceneryMask = Map.LayerMasker.Mask(MapLayers.Scenery);
+            var itemsMask = Map.LayerMasker.Mask(MapLayers.Items);
+            var creaturesMask = Map.LayerMasker.Mask(MapLayers.Creatures);
+
+            foreach (var position in Map.Positions())
+            {
+                if (Map.Explored[position])
+                {
+                    var scenery = Map.GetObjects<CastleObject>(position, sceneryMask).LastOrDefault();
+
+                    if(scenery != null)
+                    {
+                        var image = scenery.GetImage();
+                        if (image != null)
+                            PaintObject(graphics, image, position, sizeOne, scale);
+                    }
+
+                    var items = Map.GetObjects<CastleObject>(position, itemsMask).ToArray();
+
+                    if (items.Length == 1)
+                    {
+                        var image = items[0].GetImage();
+                        if (image != null)
+                            PaintObject(graphics, image, position, sizeOne, scale);
+                    }
+                    else if(items.Length > 1)
+                    {
+                        var image = Bitmaps.Read("/items/pile");
+                        if (image != null)
+                            PaintObject(graphics, image, position, sizeOne, scale);
+                    }
+                }
+
+                if (Map.FOV.BooleanFOV[position])
+                {
+                    var creature = Map.GetObjects<CastleObject>(position, creaturesMask).SingleOrDefault();
+
+                    if (creature != null)
+                    {
+                        var image = creature.GetImage();
+                        if (image != null)
+                            PaintObject(graphics, image, position, sizeOne, scale);
+                    }
+                }
+            }
+        }
+
+        private static void PaintObject(Graphics graphics, Image image, Coord position, Size size, int scale)
+        {
+            graphics.DrawImage(image, position.X * scale, position.Y * scale, size.Width * scale, size.Height * scale);
+        }
+
+        private void Form1_Load(object sender, System.EventArgs e)
+        {
+
         }
     }
 }

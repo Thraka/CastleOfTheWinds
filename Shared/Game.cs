@@ -1,7 +1,5 @@
 ﻿using GoRogue.GameFramework;
 using GoRogue;
-using GoRogue.MapGeneration;
-using GoRogue.MapViews;
 using System;
 using System.Collections.Generic;
 
@@ -9,45 +7,30 @@ namespace CastleOfTheWinds
 {
     public class Game
     {
+        public Game()
+        {
+            Map = FixedMaps.Village;
+            Player = new CastleObject(MapLayers.Creatures, (13, 17), description: "you", imagePath: "/creatures/human_male", parentObject: null, isStatic: false, isWalkable: false, isTransparent: true);
+            if (!Map.AddEntity(Player))
+            {
+                var existing = Map.GetEntities<IGameObject>(Player.Position);
+            }
+            Map.CalculateFOV(Player.Position, 1);
+
+            Logs = new List<string>();
+
+            Player.Moved += (s, e) => Map.CalculateFOV(Player.Position, 1);
+        }
+
         public Map Map { get; private set; }
 
         public GameObject Player { get; private set; }
 
-        public List<string> Logs { get; private set; }
+        public List<string> Logs { get; private set; } = new();
 
         public event EventHandler<string> MessageLogged;
 
-        public void Initialize()
-        {
-            // We'll use GoRogue map generation to generate a simple rectangle map, with walls
-            // around the edges and floor everywhere else, then translate to use our GameObjects.
-            var terrainMap = new ArrayMap<bool>(80, 50);
-
-            QuickGenerators.GenerateRectangleMap(terrainMap);
-
-            Map = new Map(
-                width: terrainMap.Width,
-                height: terrainMap.Height,
-                numberOfEntityLayers: 1,
-                distanceMeasurement: Distance.CHEBYSHEV);
-
-            foreach (var pos in terrainMap.Positions())
-                if (terrainMap[pos]) // Floor
-                    Map.SetTerrain(TerrainFactory.Floor(pos));
-                else // Wall
-                    Map.SetTerrain(TerrainFactory.Wall(pos));
-
-            // Create the player at position (1, 1) - just inside the outer walls
-            Player = EntityFactory.Player((1, 1));
-
-            Map.AddEntity(Player);
-
-            Logs = new List<string>();
-
-            Player.Moved += (s,e) => Map.CalculateFOV(Player.Position, 1);
-        }
-
-        internal bool ProcessCommand(InputCommand inputCommand, bool hasShift, bool hasControl, bool hasAlt)
+        public bool ProcessCommand(InputCommand inputCommand, bool hasShift, bool hasControl, bool hasAlt)
         {
             switch(inputCommand)
             {
@@ -80,7 +63,7 @@ namespace CastleOfTheWinds
             }
         }
 
-        private void MovePlayer(Direction direction, bool sprint)
+        public void MovePlayer(Direction direction, bool sprint)
         {
             bool collision;
 
