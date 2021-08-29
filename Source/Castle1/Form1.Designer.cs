@@ -153,6 +153,7 @@ namespace CastleOfTheWinds
             // 
             this.outerSplitContainer.Cursor = System.Windows.Forms.Cursors.HSplit;
             this.outerSplitContainer.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.outerSplitContainer.FixedPanel = System.Windows.Forms.FixedPanel.Panel2;
             this.outerSplitContainer.Location = new System.Drawing.Point(0, 49);
             this.outerSplitContainer.Name = "outerSplitContainer";
             this.outerSplitContainer.Orientation = System.Windows.Forms.Orientation.Horizontal;
@@ -166,7 +167,7 @@ namespace CastleOfTheWinds
             // 
             this.outerSplitContainer.Panel2.Controls.Add(this.innerSplitContainer);
             this.outerSplitContainer.Size = new System.Drawing.Size(943, 499);
-            this.outerSplitContainer.SplitterDistance = 310;
+            this.outerSplitContainer.SplitterDistance = 414;
             this.outerSplitContainer.TabIndex = 1;
             // 
             // picture
@@ -191,7 +192,7 @@ namespace CastleOfTheWinds
             // innerSplitContainer.Panel2
             // 
             this.innerSplitContainer.Panel2.Controls.Add(this.statsListBox);
-            this.innerSplitContainer.Size = new System.Drawing.Size(943, 185);
+            this.innerSplitContainer.Size = new System.Drawing.Size(943, 81);
             this.innerSplitContainer.SplitterDistance = 692;
             this.innerSplitContainer.TabIndex = 0;
             // 
@@ -202,7 +203,7 @@ namespace CastleOfTheWinds
             this.logTextBox.Multiline = true;
             this.logTextBox.Name = "logTextBox";
             this.logTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.logTextBox.Size = new System.Drawing.Size(692, 185);
+            this.logTextBox.Size = new System.Drawing.Size(692, 81);
             this.logTextBox.TabIndex = 0;
             // 
             // statsListBox
@@ -220,7 +221,7 @@ namespace CastleOfTheWinds
             this.statsListBox.Location = new System.Drawing.Point(0, 0);
             this.statsListBox.Name = "statsListBox";
             this.statsListBox.SelectionMode = System.Windows.Forms.SelectionMode.None;
-            this.statsListBox.Size = new System.Drawing.Size(247, 185);
+            this.statsListBox.Size = new System.Drawing.Size(247, 81);
             this.statsListBox.TabIndex = 1;
             // 
             // toolStrip1

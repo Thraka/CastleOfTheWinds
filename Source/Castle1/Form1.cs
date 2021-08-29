@@ -24,6 +24,8 @@ namespace CastleOfTheWinds
         {
             InitializeComponent();
 
+
+
             Game = game;
             Map = game.Map;
             Player = game.Player;
