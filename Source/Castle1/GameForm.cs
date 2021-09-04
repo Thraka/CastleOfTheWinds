@@ -1,4 +1,5 @@
-﻿using GoRogue;
+﻿using System;
+using GoRogue;
 using GoRogue.GameFramework;
 using GoRogue.MapViews;
 
@@ -9,18 +10,20 @@ using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using System.Windows.Forms;
+using Rectangle = System.Drawing.Rectangle;
 
 namespace CastleOfTheWinds
 {
-    public partial class Form1 : Form
+    public partial class GameForm : Form
     {
         private readonly Dictionary<Keys, InputCommand> keyMap = new();
+        private int scale = 32;
 
         public Game Game { get; }
         public Map Map { get; }
         public GameObject Player { get; }
 
-        public Form1(Game game)
+        public GameForm(Game game)
         {
             InitializeComponent();
 
@@ -30,7 +33,7 @@ namespace CastleOfTheWinds
             Map = game.Map;
             Player = game.Player;
 
-            Player.Moved += Map_ObjectMoved;
+            Player.Moved += PlayerMoved;
             Game.MessageLogged += (sender, message) => Log(message);
            
             keyMap[Keys.Up] = InputCommand.MoveUp;
@@ -41,6 +44,11 @@ namespace CastleOfTheWinds
             keyMap[Keys.PageDown] = InputCommand.MoveUpRight;
             keyMap[Keys.End] = InputCommand.MoveDownLeft;
             keyMap[Keys.Next] = InputCommand.MoveDownRight;
+
+            this.picture.Top = 0;
+            this.picture.Left = 0;
+            this.picture.Width = scale * Map.Width;
+            this.picture.Height = scale * Map.Width;
 
             RedrawMap();
         }
@@ -64,7 +72,7 @@ namespace CastleOfTheWinds
             return base.ProcessCmdKey(ref msg, keyData);
         }
 
-        private void Map_ObjectMoved(object? sender, ItemMovedEventArgs<IGameObject> eventArgs)
+        private void PlayerMoved(object? sender, ItemMovedEventArgs<IGameObject> eventArgs)
         {
             RedrawMap();
         }
@@ -76,8 +84,6 @@ namespace CastleOfTheWinds
 
         private void RedrawMap()
         {
-            var scale = 32;
-
             var bitmap = new Bitmap(scale * Map.Width, scale * Map.Height);
             var graphics = Graphics.FromImage(bitmap);
 
@@ -87,8 +93,45 @@ namespace CastleOfTheWinds
             PaintVisibleObjects(graphics, scale);
 
             this.picture.Image = bitmap;
-            this.picture.Width = bitmap.Width;
-            this.picture.Height = bitmap.Height;
+
+            var scaledPlayerPosition = Player.Position * scale + this.picture.Location;
+
+            var edgeRectangle = new Rectangle(
+                scaledPlayerPosition.X - scale * 2,
+                scaledPlayerPosition.Y - scale * 2,
+                scale * 5,
+                scale * 5
+            );
+
+            edgeRectangle.Intersect(this.picture.Bounds);
+
+            var panel = (SplitterPanel)this.picture.Parent;
+            
+            var shift = Size.Empty;
+            if (edgeRectangle.X < panel.ClientRectangle.X)
+            {
+                shift = new Size(panel.ClientRectangle.X - edgeRectangle.X, shift.Height);
+            }
+
+            if (edgeRectangle.Y < panel.ClientRectangle.Y)
+            {
+                shift = new Size(shift.Width, panel.ClientRectangle.Y - edgeRectangle.Y);
+            }
+
+            if (panel.ClientRectangle.Right < edgeRectangle.Right)
+            {
+                shift = new Size(panel.ClientRectangle.Right - edgeRectangle.Right, shift.Height);
+            }
+
+            if (panel.ClientRectangle.Bottom < edgeRectangle.Bottom)
+            {
+                shift = new Size(shift.Width, panel.ClientRectangle.Bottom - edgeRectangle.Bottom);
+            }
+
+            if (shift != Size.Empty)
+            {
+                this.picture.Location = Point.Add(this.picture.Location, shift);
+            }
         }
 
         private void PaintExposedTerrain(Graphics graphics, int scale)
@@ -104,7 +147,13 @@ namespace CastleOfTheWinds
 
                     var scaledSize = terrainObject.Size * scale;
 
-                    graphics.DrawImage(terrainObject.GetImage(), position.X * scale, position.Y * scale, scaledSize.Width, scaledSize.Height);
+                    var image = terrainObject.GetImage();
+
+                    if (image != null)
+                    {
+                        graphics.DrawImage(image, position.X * scale, position.Y * scale, scaledSize.Width,
+                            scaledSize.Height);
+                    }
                 }
             }
         }

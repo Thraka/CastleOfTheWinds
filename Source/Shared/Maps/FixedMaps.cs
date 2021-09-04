@@ -64,7 +64,7 @@ namespace CastleOfTheWinds
             AddSceneryObject(map, (11, 17), "A  sign that says:\nBjorn the Blacksmith", "/scenery/sign", isWalkable: true);
             AddSceneryObject(map, (13, 18), "the village well", "/scenery/well", isWalkable: false);
             AddSceneryObject(map, (14, 21), "A sign that says:\nShrine of Odin", "/scenery/sign", isWalkable: true);
-            AddSceneryObject(map, (15, 13), "A sign that says:\nOlaf's Junk Store", "/scenery/sign", isWalkable: true);
+            AddSceneryObject(map, (15, 12), "A sign that says:\nOlaf's Junk Store", "/scenery/sign", isWalkable: true);
             AddSceneryObject(map, (15, 17), "A sign that says:\nGunhild's General Store", "/scenery/sign", isWalkable: true);
             AddSceneryObject(map, (17, 4), "A vegetable garden", "/scenery/garden", isWalkable: true);
             

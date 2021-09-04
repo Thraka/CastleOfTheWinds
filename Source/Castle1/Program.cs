@@ -22,7 +22,7 @@ namespace Castle1
 
             var game = new Game();
 
-            Application.Run(new Form1(game));
+            Application.Run(new GameForm(game));
         }
     }
 }
