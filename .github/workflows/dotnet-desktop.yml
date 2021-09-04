@@ -31,7 +31,7 @@ jobs:
       uses: microsoft/setup-msbuild@v1.0.2
       
     - name: Build the application
-      run: dotnet build -c ${{ env.configuration }}
+      run: dotnet publish -c ${{ env.configuration }} -o output
 
     - name: Execute unit tests
       run: dotnet test
@@ -40,4 +40,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Application
-        path: Source/bin/${{ env.Configuration }}
+        path: output
