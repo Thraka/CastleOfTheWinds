@@ -9,67 +9,69 @@ namespace CastleOfTheWinds
     {
         public Game()
         {
-            Map = FixedMaps.Village;
-            Player = new CastleObject(MapLayers.Creatures, (13, 17), description: "you", imagePath: "/creatures/human_male", parentObject: null, isStatic: false, isWalkable: false, isTransparent: true);
-            if (!Map.AddEntity(Player))
-            {
-                var existing = Map.GetEntities<IGameObject>(Player.Position);
-            }
-            Map.CalculateFOV(Player.Position, 1);
-
             Logs = new List<string>();
+            Map = FixedMaps.Village;
+            Player = new Creature(new Coord(13, 17), description: "you", imagePath: "/creatures/human_male");
 
-            Player.Moved += (s, e) => Map.CalculateFOV(Player.Position, 1);
+            Map.AddEntity(Player);
         }
 
         public Map Map { get; private set; }
 
-        public GameObject Player { get; private set; }
+        public Creature Player { get; private set; }
 
-        public List<string> Logs { get; private set; } = new();
+        public List<string> Logs { get; private set; }
 
         public event EventHandler<string> MessageLogged;
 
-        public bool ProcessCommand(InputCommand inputCommand, bool hasShift, bool hasControl, bool hasAlt)
+        public event EventHandler MapUpdated;
+
+        public void ProcessTurn(PlayerCommand playerCommand)
         {
-            switch(inputCommand)
+            Action playerAction = playerCommand switch
             {
-                case InputCommand.MoveUp:
-                    MovePlayer(Direction.UP, hasShift);
-                    return true;
-                case InputCommand.MoveDown:
-                    MovePlayer(Direction.DOWN, hasShift);
-                    return true;
-                case InputCommand.MoveLeft:
-                    MovePlayer(Direction.LEFT, hasShift);
-                    return true;
-                case InputCommand.MoveRight:
-                    MovePlayer(Direction.RIGHT, hasShift);
-                    return true;
-                case InputCommand.MoveUpLeft:
-                    MovePlayer(Direction.UP_LEFT, hasShift);
-                    return true;
-                case InputCommand.MoveUpRight:
-                    MovePlayer(Direction.UP_RIGHT, hasShift);
-                    return true;
-                case InputCommand.MoveDownLeft:
-                    MovePlayer(Direction.DOWN_LEFT, hasShift);
-                    return true;
-                case InputCommand.MoveDownRight:
-                    MovePlayer(Direction.DOWN_RIGHT, hasShift);
-                    return true;
-                default:
-                    return false;
+                PlayerCommand.MoveUp => () => MoveOrAttack(Direction.UP),
+                PlayerCommand.MoveDown => () => MoveOrAttack(Direction.DOWN),
+                PlayerCommand.MoveLeft => () => MoveOrAttack(Direction.LEFT),
+                PlayerCommand.MoveRight => () => MoveOrAttack(Direction.RIGHT),
+                PlayerCommand.MoveUpLeft => () => MoveOrAttack(Direction.UP_LEFT),
+                PlayerCommand.MoveUpRight => () => MoveOrAttack(Direction.UP_RIGHT),
+                PlayerCommand.MoveDownLeft => () => MoveOrAttack(Direction.DOWN_LEFT, hasShift),
+                PlayerCommand.MoveDownRight => () => MoveOrAttack(Direction.DOWN_RIGHT, hasShift),
+                _ => throw new ArgumentException("Unrecognized PlayerCommand")
+            };
+
+            if (playerAction == null)
+            {
+                return false;
             }
+
+            ProcessTurn(playerAction);
         }
 
-        public void MovePlayer(Direction direction, bool sprint)
+        private void ProcessTurn(Action playerAction)
+        {
+            UpdateMap();
+        }
+
+        private void UpdateMap()
+        {
+            Map.CalculateFOV(Player.Position, 1);
+            MapUpdated?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void MoveOrAttack(Direction direction, bool sprint)
         {
             bool collision;
 
             while(true)
             {
                 collision = !Player.MoveIn(direction);
+
+                if (collision)
+                {
+                    break
+                }
                 
                 if(collision || !sprint)
                 {

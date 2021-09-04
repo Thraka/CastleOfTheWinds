@@ -75,6 +75,7 @@ namespace CastleOfTheWinds
         private void PlayerMoved(object? sender, ItemMovedEventArgs<IGameObject> eventArgs)
         {
             RedrawMap();
+            EnsurePlayerVisible();
         }
 
         private void Log(string message)
@@ -93,7 +94,10 @@ namespace CastleOfTheWinds
             PaintVisibleObjects(graphics, scale);
 
             this.picture.Image = bitmap;
+        }
 
+        private void EnsurePlayerVisible()
+        {
             var scaledPlayerPosition = Player.Position * scale + this.picture.Location;
 
             var edgeRectangle = new Rectangle(
@@ -105,8 +109,8 @@ namespace CastleOfTheWinds
 
             edgeRectangle.Intersect(this.picture.Bounds);
 
-            var panel = (SplitterPanel)this.picture.Parent;
-            
+            var panel = (SplitterPanel) this.picture.Parent;
+
             var shift = Size.Empty;
             if (edgeRectangle.X < panel.ClientRectangle.X)
             {
