@@ -1,5 +1,7 @@
 # Castle of the Winds, reproduction
 
+[![.NET Core Desktop](https://github.com/hallipr/CastleOfTheWinds/actions/workflows/dotnet-desktop.yml/badge.svg)](https://github.com/hallipr/CastleOfTheWinds/actions/workflows/dotnet-desktop.yml)
+
 Castle of the Winds is a Windows 3.1 roguelike game created by Rick Saada.  It was published in 1993 by Epic Megagames.
 
 Rick Saada [released the game for free](https://web.archive.org/web/20031127042908/http://www.exmsft.com:80/~ricks/) in 2003.
