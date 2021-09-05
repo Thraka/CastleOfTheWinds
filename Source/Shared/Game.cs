@@ -1,89 +1,153 @@
-﻿using GoRogue.GameFramework;
-using GoRogue;
+﻿using GoRogue;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using GoRogue.MapViews;
 
 namespace CastleOfTheWinds
 {
     public class Game
     {
+        private static readonly TimeSpan TickDuration = TimeSpan.FromSeconds(2.5);
+        private int _currentTick;
+
         public Game()
         {
             Logs = new List<string>();
+
             Map = FixedMaps.Village;
-            Player = new Creature(new Coord(13, 17), description: "you", imagePath: "/creatures/human_male");
 
-            Map.AddEntity(Player);
-        }
-
-        public Map Map { get; private set; }
-
-        public Creature Player { get; private set; }
-
-        public List<string> Logs { get; private set; }
-
-        public event EventHandler<string> MessageLogged;
-
-        public event EventHandler MapUpdated;
-
-        public void ProcessTurn(PlayerCommand playerCommand)
-        {
-            Action playerAction = playerCommand switch
+            Player = new Creature((13, 17), description: "you", imagePath: "/creatures/human_male")
             {
-                PlayerCommand.MoveUp => () => MoveOrAttack(Direction.UP),
-                PlayerCommand.MoveDown => () => MoveOrAttack(Direction.DOWN),
-                PlayerCommand.MoveLeft => () => MoveOrAttack(Direction.LEFT),
-                PlayerCommand.MoveRight => () => MoveOrAttack(Direction.RIGHT),
-                PlayerCommand.MoveUpLeft => () => MoveOrAttack(Direction.UP_LEFT),
-                PlayerCommand.MoveUpRight => () => MoveOrAttack(Direction.UP_RIGHT),
-                PlayerCommand.MoveDownLeft => () => MoveOrAttack(Direction.DOWN_LEFT, hasShift),
-                PlayerCommand.MoveDownRight => () => MoveOrAttack(Direction.DOWN_RIGHT, hasShift),
-                _ => throw new ArgumentException("Unrecognized PlayerCommand")
+                Mana = 7,
+                ManaMax = 7,
+                HitPoints = 50,
+                HitPointsMax = 50,
+                Speed = 100,
+                SpeedMax = 200
             };
 
-            if (playerAction == null)
+            Map.AddEntity(Player);
+            Map.CalculateFOV(Player.Position, 1);
+        }
+
+        public CastleMap Map { get; }
+
+        public Creature Player { get; }
+
+        public List<string> Logs { get; }
+
+        public TimeSpan GameTime => TickDuration * _currentTick;
+
+        public event EventHandler<string>? MessageLogged;
+
+        public event EventHandler? StateChanged;
+
+
+        public bool MoveOrAttack(Direction direction)
+        {
+            if (!Map.Contains(Player.Position + direction))
             {
+                // moving outside the map
+                return false;
+            }
+            
+            if (MoveAndTick(direction))
+            {
+                return true;
+            }
+
+            if (AttackAndTick(direction))
+            {
+                return true;
+            }
+            
+            // we can't move that way, and we can't attack something in that direction. Why are we blocked?
+            var blockingObject = Map.GetObjects<CastleObject>(Player.Position + direction)
+                .Reverse()
+                .FirstOrDefault(x => !x.IsWalkable);
+            
+            Log(blockingObject != null
+                ? $"Blocked by {blockingObject.Description}"
+                : "Error: Unexpected inability to MoveOrAttack");
+
+            return false;
+        }
+
+        public bool Sprint(Direction direction)
+        {
+            var moved = false;
+
+            while (MoveAndTick(direction))
+            {
+                moved = true;
+                // We were able to move to a new tile.
+                // See if we need to stop here for some reason.
+                //
+                // if(specialTile) {
+                //   return true;
+                // }
+            }
+
+            if (moved)
+            {
+                // collided with something
+                // Try to kill it :)
+                if (!AttackAndTick(direction))
+                {
+                    // nothing there. Sanity check blocking terrain...
+                    // we can't move that way, and we can't attack something in that direction. Why are we blocked?
+                    var targetTerrain = Map.GetTerrain<CastleObject>(Player.Position + direction);
+
+                    Log(!targetTerrain.IsWalkable
+                        ? $"Blocked by {targetTerrain.Description}"
+                        : "Error: Unexpected inability to MoveOrAttack");
+                }
+            }
+
+            // sprinting is only successful if there is some movement involved
+            return moved;
+        }
+
+
+        private bool MoveAndTick(Direction direction)
+        {
+            if (!Player.MoveIn(direction)) 
+                return false;
+
+            ProcessTick();
+            return true;
+        }
+
+        private bool AttackAndTick(Direction direction)
+        {
+            if (!Map.Contains(Player.Position + direction))
+            {
+                // Attacking outside the map
                 return false;
             }
 
-            ProcessTurn(playerAction);
+            var targetCreature = Map.GetObjects<Creature>(Player.Position + direction)
+                .FirstOrDefault();
+
+            if (targetCreature == null)
+                return false;
+
+            // Do some damage, maybe kill
+
+            ProcessTick();
+            return true;
         }
 
-        private void ProcessTurn(Action playerAction)
+        private void ProcessTick()
         {
-            UpdateMap();
-        }
+            // TickCreatures();
 
-        private void UpdateMap()
-        {
+            _currentTick += 1;
             Map.CalculateFOV(Player.Position, 1);
-            MapUpdated?.Invoke(this, EventArgs.Empty);
+            StateChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        public void MoveOrAttack(Direction direction, bool sprint)
-        {
-            bool collision;
-
-            while(true)
-            {
-                collision = !Player.MoveIn(direction);
-
-                if (collision)
-                {
-                    break
-                }
-                
-                if(collision || !sprint)
-                {
-                    break;
-                }
-            }       
-            
-            if(collision)
-            {
-                Log("Collision");
-            }            
-        }
 
         private void Log(string message)
         {

@@ -44,7 +44,7 @@ namespace CastleOfTheWinds
             this.picture = new System.Windows.Forms.PictureBox();
             this.innerSplitContainer = new System.Windows.Forms.SplitContainer();
             this.logTextBox = new System.Windows.Forms.TextBox();
-            this.statsListBox = new System.Windows.Forms.ListBox();
+            this.richTextBox1 = new System.Windows.Forms.RichTextBox();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
             this.toolStripButton2 = new System.Windows.Forms.ToolStripButton();
@@ -162,10 +162,12 @@ namespace CastleOfTheWinds
             // 
             this.outerSplitContainer.Panel1.AutoScroll = true;
             this.outerSplitContainer.Panel1.Controls.Add(this.picture);
+            this.outerSplitContainer.Panel1.Cursor = System.Windows.Forms.Cursors.Default;
             // 
             // outerSplitContainer.Panel2
             // 
             this.outerSplitContainer.Panel2.Controls.Add(this.innerSplitContainer);
+            this.outerSplitContainer.Panel2.Cursor = System.Windows.Forms.Cursors.Default;
             this.outerSplitContainer.Size = new System.Drawing.Size(943, 499);
             this.outerSplitContainer.SplitterDistance = 414;
             this.outerSplitContainer.TabIndex = 1;
@@ -188,41 +190,42 @@ namespace CastleOfTheWinds
             // innerSplitContainer.Panel1
             // 
             this.innerSplitContainer.Panel1.Controls.Add(this.logTextBox);
+            this.innerSplitContainer.Panel1.Cursor = System.Windows.Forms.Cursors.Default;
             // 
             // innerSplitContainer.Panel2
             // 
-            this.innerSplitContainer.Panel2.Controls.Add(this.statsListBox);
+            this.innerSplitContainer.Panel2.Controls.Add(this.richTextBox1);
+            this.innerSplitContainer.Panel2.Cursor = System.Windows.Forms.Cursors.Default;
             this.innerSplitContainer.Size = new System.Drawing.Size(943, 81);
-            this.innerSplitContainer.SplitterDistance = 692;
+            this.innerSplitContainer.SplitterDistance = 724;
             this.innerSplitContainer.TabIndex = 0;
             // 
             // logTextBox
             // 
+            this.logTextBox.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.logTextBox.Cursor = System.Windows.Forms.Cursors.Default;
             this.logTextBox.Dock = System.Windows.Forms.DockStyle.Fill;
             this.logTextBox.Location = new System.Drawing.Point(0, 0);
             this.logTextBox.Multiline = true;
             this.logTextBox.Name = "logTextBox";
             this.logTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.logTextBox.Size = new System.Drawing.Size(692, 81);
+            this.logTextBox.Size = new System.Drawing.Size(724, 81);
             this.logTextBox.TabIndex = 0;
+            this.logTextBox.Text = "\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n";
             // 
-            // statsListBox
+            // richTextBox1
             // 
-            this.statsListBox.Cursor = System.Windows.Forms.Cursors.Default;
-            this.statsListBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.statsListBox.FormattingEnabled = true;
-            this.statsListBox.ItemHeight = 15;
-            this.statsListBox.Items.AddRange(new object[] {
-            "HP\t43 (43)",
-            "Mana\t11 (11)",
-            "Speed\t100% / 163%",
-            "Time\t3d,12:00:58",
-            "Mine Level\t1"});
-            this.statsListBox.Location = new System.Drawing.Point(0, 0);
-            this.statsListBox.Name = "statsListBox";
-            this.statsListBox.SelectionMode = System.Windows.Forms.SelectionMode.None;
-            this.statsListBox.Size = new System.Drawing.Size(247, 81);
-            this.statsListBox.TabIndex = 1;
+            this.richTextBox1.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.richTextBox1.Cursor = System.Windows.Forms.Cursors.Default;
+            this.richTextBox1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.richTextBox1.Location = new System.Drawing.Point(0, 0);
+            this.richTextBox1.Name = "richTextBox1";
+            this.richTextBox1.ReadOnly = true;
+            this.richTextBox1.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.None;
+            this.richTextBox1.Size = new System.Drawing.Size(215, 81);
+            this.richTextBox1.TabIndex = 0;
+            this.richTextBox1.Text = "";
+            this.richTextBox1.WordWrap = false;
             // 
             // toolStrip1
             // 
@@ -401,7 +404,7 @@ namespace CastleOfTheWinds
             this.toolStripButton16.Size = new System.Drawing.Size(23, 22);
             this.toolStripButton16.Text = "toolStripButton16";
             // 
-            // Form1
+            // GameForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -410,7 +413,7 @@ namespace CastleOfTheWinds
             this.Controls.Add(this.toolStrip1);
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
-            this.Name = "Form1";
+            this.Name = "GameForm";
             this.Text = "Castle of the Winds";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.menuStrip1.ResumeLayout(false);
@@ -437,7 +440,6 @@ namespace CastleOfTheWinds
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.SplitContainer outerSplitContainer;
         private System.Windows.Forms.SplitContainer innerSplitContainer;
-        private System.Windows.Forms.ListBox statsListBox;
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem characterToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem inventoryToolStripMenuItem;
@@ -467,6 +469,7 @@ namespace CastleOfTheWinds
         private System.Windows.Forms.ToolStripButton toolStripButton14;
         private System.Windows.Forms.ToolStripButton toolStripButton15;
         private System.Windows.Forms.ToolStripButton toolStripButton16;
+        private System.Windows.Forms.RichTextBox richTextBox1;
     }
 }
 

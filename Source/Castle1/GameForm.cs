@@ -16,100 +16,112 @@ namespace CastleOfTheWinds
 {
     public partial class GameForm : Form
     {
-        private readonly Dictionary<Keys, InputCommand> keyMap = new();
-        private int scale = 32;
-
-        public Game Game { get; }
-        public Map Map { get; }
-        public GameObject Player { get; }
+        private const int PixelsPerTile = 32;
+        
+        private static readonly Dictionary<Keys, Action<Game>> KeyCommands = new()
+        {
+            [Keys.Shift | Keys.Up] = game => game.Sprint(Direction.UP),
+            [Keys.Shift | Keys.Down] = game => game.Sprint(Direction.DOWN),
+            [Keys.Shift | Keys.Left] = game => game.Sprint(Direction.LEFT),
+            [Keys.Shift | Keys.Right] = game => game.Sprint(Direction.RIGHT),
+            [Keys.Shift | Keys.Home] = game => game.Sprint(Direction.UP_LEFT),
+            [Keys.Shift | Keys.PageUp] = game => game.Sprint(Direction.UP_RIGHT),
+            [Keys.Shift | Keys.End] = game => game.Sprint(Direction.DOWN_LEFT),
+            [Keys.Shift | Keys.PageDown] = game => game.Sprint(Direction.DOWN_RIGHT),
+            [Keys.Up] = game => game.MoveOrAttack(Direction.UP),
+            [Keys.Down] = game => game.MoveOrAttack(Direction.DOWN),
+            [Keys.Left] = game => game.MoveOrAttack(Direction.LEFT),
+            [Keys.Right] = game => game.MoveOrAttack(Direction.RIGHT),
+            [Keys.Home] = game => game.MoveOrAttack(Direction.UP_LEFT),
+            [Keys.PageUp] = game => game.MoveOrAttack(Direction.UP_RIGHT),
+            [Keys.End] = game => game.MoveOrAttack(Direction.DOWN_LEFT),
+            [Keys.PageDown] = game => game.MoveOrAttack(Direction.DOWN_RIGHT),
+        };
 
         public GameForm(Game game)
         {
             InitializeComponent();
 
-
-
             Game = game;
             Map = game.Map;
             Player = game.Player;
 
-            Player.Moved += PlayerMoved;
-            Game.MessageLogged += (sender, message) => Log(message);
-           
-            keyMap[Keys.Up] = InputCommand.MoveUp;
-            keyMap[Keys.Down] = InputCommand.MoveDown;
-            keyMap[Keys.Left] = InputCommand.MoveLeft;
-            keyMap[Keys.Right] = InputCommand.MoveRight;
-            keyMap[Keys.Home] = InputCommand.MoveUpLeft;
-            keyMap[Keys.PageDown] = InputCommand.MoveUpRight;
-            keyMap[Keys.End] = InputCommand.MoveDownLeft;
-            keyMap[Keys.Next] = InputCommand.MoveDownRight;
+            Game.StateChanged += (_, _) => ProcessStateChange();
+            Game.MessageLogged += (_, _) => UpdateLog();
 
             this.picture.Top = 0;
             this.picture.Left = 0;
-            this.picture.Width = scale * Map.Width;
-            this.picture.Height = scale * Map.Width;
+            this.picture.Width = PixelsPerTile * Map.Width;
+            this.picture.Height = PixelsPerTile * Map.Width;
 
-            RedrawMap();
+            ProcessStateChange();
         }
+
+        public Game Game { get; }
+
+        public CastleMap Map { get; }
+
+        public Creature Player { get; }
+
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            var hasShift = keyData.HasFlag(Keys.Shift);
-            var hasControl = keyData.HasFlag(Keys.Control);
-            var hasAlt = keyData.HasFlag(Keys.Alt);
-
-            var unmodifiedKey = keyData;
-            if(hasShift) unmodifiedKey -= Keys.Shift;
-            if(hasControl) unmodifiedKey -= Keys.Control;
-            if(hasAlt) unmodifiedKey -= Keys.Alt;
-
-            if (keyMap.TryGetValue(unmodifiedKey, out var inputCommand) && Game.ProcessCommand(inputCommand, hasShift, hasControl, hasAlt))
+            if (KeyCommands.TryGetValue(keyData, out var action))
             {
+                action.Invoke(Game);
                 return true;
             }
-            
+
             return base.ProcessCmdKey(ref msg, keyData);
         }
 
-        private void PlayerMoved(object? sender, ItemMovedEventArgs<IGameObject> eventArgs)
+        private void ProcessStateChange()
         {
             RedrawMap();
             EnsurePlayerVisible();
+            UpdateStats();
         }
 
-        private void Log(string message)
+        private void UpdateStats()
         {
-            this.logTextBox.AppendText($"\r\n{message}");
+            this.richTextBox1.SelectionTabs = new[] { 100 };
+            this.richTextBox1.Text = $"HP\t{Player.HitPoints} ({Player.HitPointsMax})\nMana\t{Player.Mana} ({Player.ManaMax})\nSpeed\t{Player.Speed}% / {Player.SpeedMax}%\nTime\t{Game.GameTime:d\\d\\,hh\\:mm\\:ss}\n{Map.Name}";
+        }
+
+        private void UpdateLog()
+        {
+            this.logTextBox.Lines = Game.Logs.ToArray();
+            this.logTextBox.SelectionStart = this.logTextBox.Text.Length;
+            this.logTextBox.ScrollToCaret();
         }
 
         private void RedrawMap()
         {
-            var bitmap = new Bitmap(scale * Map.Width, scale * Map.Height);
+            var bitmap = new Bitmap(PixelsPerTile * Map.Width, PixelsPerTile * Map.Height);
             var graphics = Graphics.FromImage(bitmap);
 
             graphics.Clear(Color.White);
 
-            PaintExposedTerrain(graphics, scale);
-            PaintVisibleObjects(graphics, scale);
+            PaintExposedTerrain(graphics, PixelsPerTile);
+            PaintVisibleObjects(graphics, PixelsPerTile);
 
             this.picture.Image = bitmap;
         }
 
         private void EnsurePlayerVisible()
         {
-            var scaledPlayerPosition = Player.Position * scale + this.picture.Location;
+            var scaledPlayerPosition = Player.Position * PixelsPerTile + this.picture.Location;
 
             var edgeRectangle = new Rectangle(
-                scaledPlayerPosition.X - scale * 2,
-                scaledPlayerPosition.Y - scale * 2,
-                scale * 5,
-                scale * 5
+                scaledPlayerPosition.X - PixelsPerTile * 2,
+                scaledPlayerPosition.Y - PixelsPerTile * 2,
+                PixelsPerTile * 5,
+                PixelsPerTile * 5
             );
 
             edgeRectangle.Intersect(this.picture.Bounds);
 
-            var panel = (SplitterPanel) this.picture.Parent;
+            var panel = (SplitterPanel)this.picture.Parent;
 
             var shift = Size.Empty;
             if (edgeRectangle.X < panel.ClientRectangle.X)
@@ -144,7 +156,7 @@ namespace CastleOfTheWinds
             {
                 if (Map.Explored[position])
                 {
-                    if(Map.Terrain[position] is not TerrainObject terrainObject)
+                    if (Map.Terrain[position] is not TerrainObject terrainObject)
                     {
                         continue;
                     }
@@ -161,6 +173,7 @@ namespace CastleOfTheWinds
                 }
             }
         }
+
         private void PaintVisibleObjects(Graphics graphics, int scale)
         {
             var sizeOne = new Size(1, 1);
@@ -174,7 +187,7 @@ namespace CastleOfTheWinds
                 {
                     var scenery = Map.GetObjects<CastleObject>(position, sceneryMask).LastOrDefault();
 
-                    if(scenery != null)
+                    if (scenery != null)
                     {
                         var image = scenery.GetImage();
                         if (image != null)
@@ -189,7 +202,7 @@ namespace CastleOfTheWinds
                         if (image != null)
                             PaintObject(graphics, image, position, sizeOne, scale);
                     }
-                    else if(items.Length > 1)
+                    else if (items.Length > 1)
                     {
                         var image = Bitmaps.Read("/items/pile");
                         if (image != null)

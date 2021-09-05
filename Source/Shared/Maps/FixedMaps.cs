@@ -10,48 +10,48 @@ namespace CastleOfTheWinds
     {
         private static readonly Size OneTile = new (1, 1);
 
-        public static Map Village { get; } = BuildVillage();
+        public static CastleMap Village { get; } = BuildVillage();
 
-        private static Map BuildVillage()
+        private static CastleMap BuildVillage()
         {
             var terrain = @"
-               x  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6
-
-               0  # # # # # # # # # # . . . + . . . . # # # # # # # # # 
-               1  # # # # # # # # # # . . . + . . . . # # # # # # # # # 
-               2  # # # # # # # # # # . . . + . . . . # # # # # # # # # 
-               3  # # # # # # # # # # . . . + . . . . # # # # # # # # # 
-               4  # # # # # # # # # # . . . + . . . . # # # # # # # # # 
-               5  # # # # # . . . . . a + + + . . . . . . . # # # # # # 
-               6  # # # # # . . . . a + b . + . . a + + . . # # # # # # 
-               7  # # # # # . . + + + b . . + . a + b . . . # # # # # # 
-               8  # # # # # . . . . . . . . + + + b . . . . . . # # # # 
-               9  # # # # # . . . . . . . . + . . . . . . . . . # # # # 
-               0  # # # # # # . . . . . . . + . . . . . . . . . # # # # 
-               1  # # # # # # . . . . . . . + . . . . . . . . . # # # # 
-               2  # # # # # # . . . . . . . + . . . . . . . . . # # # # 
-               3  # # # # # # . . . . + + + + + + + . . . . . . # # # # 
-               4  # # # # # # . . . . . . . + . . . . . . . . . # # # # 
-               5  # # # # # # . . . . . . . + . . . . . . . . . # # # # 
-               6  # # # # # # . . . . . . . + . . . . . . . . . # # # # 
-               7  # # # # # # . . . . . . + + + . . . . . # # # # # # # 
-               8  # # # # # # . . . . + + + . + + + . . . # # # # # # # 
-               9  # # # # # # . . . . . . + + + . . . . . # # # # # # # 
-               0  # # # # # # . . . . . . . + . . . . . . # # # # # # # 
-               1  # # # # # # . . . . . . . + . . . . . . # # # # # # # 
-               2  # # # # # # # # . . . . . + . . . # # # # # # # # # # 
-               3  # # # # # # # # . . . . . . . . . # # # # # # # # # # 
-               4  # # # # # # # # . . . . . . . . . # # # # # # # # # # 
-               5  # # # # # # # # . . . . . . . . . # # # # # # # # # # 
-               6  # # # # # # # # . . . . . . . . . # # # # # # # # # # 
-               7  # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+               x | 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6
+               --+------------------------------------------------------
+               0 | # # # # # # # # # # . . . + . . . . # # # # # # # # #
+               1 | # # # # # # # # # # . . . + . . . . # # # # # # # # #
+               2 | # # # # # # # # # # . . . + . . . . # # # # # # # # #
+               3 | # # # # # # # # # # . . . + . . . . # # # # # # # # #
+               4 | # # # # # # # # # # . . . + . . . . # # # # # # # # #
+               5 | # # # # # . . . . . a + + + . . . . . . . # # # # # #
+               6 | # # # # # . . . . a + b . + . . a + + . . # # # # # #
+               7 | # # # # # . . + + + b . . + . a + b . . . # # # # # #
+               8 | # # # # # . . . . . . . . + + + b . . . . . . # # # #
+               9 | # # # # # . . . . . . . . + . . . . . . . . . # # # #
+               0 | # # # # # # . . . . . . . + . . . . . . . . . # # # #
+               1 | # # # # # # . . . . . . . + . . . . . . . . . # # # #
+               2 | # # # # # # . . . . . . . + . . . . . . . . . # # # #
+               3 | # # # # # # . . . . + + + + + + + . . . . . . # # # #
+               4 | # # # # # # . . . . . . . + . . . . . . . . . # # # #
+               5 | # # # # # # . . . . . . . + . . . . . . . . . # # # #
+               6 | # # # # # # . . . . . . . + . . . . . . . . . # # # #
+               7 | # # # # # # . . . . . . + + + . . . . . # # # # # # #
+               8 | # # # # # # . . . . + + + . + + + . . . # # # # # # #
+               9 | # # # # # # . . . . . . + + + . . . . . # # # # # # #
+               0 | # # # # # # . . . . . . . + . . . . . . # # # # # # #
+               1 | # # # # # # . . . . . . . + . . . . . . # # # # # # #
+               2 | # # # # # # # # . . . . . + . . . # # # # # # # # # #
+               3 | # # # # # # # # . . . . . . . . . # # # # # # # # # #
+               4 | # # # # # # # # . . . . . . . . . # # # # # # # # # #
+               5 | # # # # # # # # . . . . . . . . . # # # # # # # # # #
+               6 | # # # # # # # # . . . . . . . . . # # # # # # # # # #
+               7 | # # # # # # # # # # # # # # # # # # # # # # # # # # #
             ";
 
-            var map = BuildMap(terrain);
+            var map = BuildMap("A Tiny Hamlet", terrain);
 
             AddTerrainObject(map, (5, 6), "A farm", "/terrain/village_hut_right", isWalkable: false, width: 3, height: 3);
             AddTerrainObject(map, (8, 17), "Bjorn the Blacksmith", "/terrain/village_hut_right", isWalkable: false, width: 3, height: 3);
-            AddTerrainObject(map, (9, 13), "The home of the village sage", "/terrain/village_hut_round", isWalkable: false, width: 2, height: 2);
+            AddTerrainObject(map, (9, 13), "The home of the village sage", "/terrain/village_sage", isWalkable: false, width: 2, height: 2);
             AddTerrainObject(map, (11, 22), "A shrine to Odin", "/terrain/village_shrine", isWalkable: false, width: 5, height: 5);
             AddTerrainObject(map, (12, 0), "The hamlet gate", "/terrain/gate", isWalkable: false, width: 3, height: 1);
             AddTerrainObject(map, (16, 12), "Olaf's Junk Store", "/terrain/village_hut_left", isWalkable: false, width: 3, height: 3);
@@ -71,19 +71,17 @@ namespace CastleOfTheWinds
             return map;
         }
 
-        private static Map BuildMap(string terrain)
+        private static CastleMap BuildMap(string name, string terrain)
         {
             var rows = terrain.Trim().Split('\n')
-                .Select(x => x.Replace(" ", null).Trim())
-                .Where(x => !string.IsNullOrEmpty(x))
-                .Skip(1)
-                .Select(x => x.Substring(1))
+                .Skip(2) // Trim off the horizontal ruler
+                .Select(x => x.Trim().Replace(" ", string.Empty).Substring(2)) // Trim off the vertical ruler
                 .ToArray();
 
             var width = rows[0].Length;
             var height = rows.Length;
 
-            var map = new Map(width, height, 3, Distance.CHEBYSHEV);
+            var map = new CastleMap(name, width, height);
 
             for (var y = 0; y < height; y++)
             {
@@ -104,8 +102,8 @@ namespace CastleOfTheWinds
                         '#' => new TerrainObject(position, "farmland", "/terrain/farmland", false, OneTile),
                         '.' => new TerrainObject(position, "grass", "/terrain/grass", true, OneTile),
                         '+' => new TerrainObject(position, "road", "/terrain/road", true, OneTile),
-                        'a' => new TerrainObject(position, "road", "/terrain/road_grass_br", true, OneTile),
-                        'b' => new TerrainObject(position, "road", "/terrain/road_grass_tl", true, OneTile),
+                        'a' => new TerrainObject(position, "road", "/terrain/grass_road_br", true, OneTile),
+                        'b' => new TerrainObject(position, "road", "/terrain/grass_road_tl", true, OneTile),
                         _ => throw new ArgumentException($"Unknown terrain character {key} at {position}", nameof(terrain))
                     };
 
@@ -145,5 +143,16 @@ namespace CastleOfTheWinds
                 }
             }
         }
+    }
+
+    public class CastleMap : Map
+    {
+        public CastleMap(string name, int width, int height)
+            : base(width, height, numberOfEntityLayers: 3, Distance.CHEBYSHEV)
+        {
+            Name = name;
+        }
+
+        public string Name { get; }
     }
 }
