@@ -14,9 +14,9 @@ namespace CastleOfTheWinds
     {
         private static readonly TimeSpan TickDuration = TimeSpan.FromSeconds(2.5);
         private int _currentTick;
-        private Dictionary<string, CastleMap> _maps;
-        private Dictionary<string, StoryScene> _storyScenes;
-        private List<string> _triggeredScenes;
+        private readonly Dictionary<string, CastleMap> _maps;
+        private readonly Dictionary<string, StoryScene> _storyScenes;
+        private readonly List<string> _triggeredScenes;
 
         public Game()
         {
@@ -78,11 +78,12 @@ namespace CastleOfTheWinds
             _maps = new CastleMap[]
                 {
                     new TinyHamlet(),
-                    new RoughTrail()
+                    new RoughTrail(),
+                    new MineLevel0()
                 }
                 .ToDictionary(x => x.Name);
 
-            Map = ChangeMap("A Tiny Hamlet", (13, 17));
+            Map = ChangeMap("A Tiny Hamlet", (13, 18));
         }
 
         private void HandlePlayerMoved(object? sender, ItemMovedEventArgs<IGameObject> eventArgs)
@@ -97,10 +98,6 @@ namespace CastleOfTheWinds
             }
 
             map.CalculateFOV(Player.Position, 1);
-
-            var terrain = map.Terrain[eventArgs.NewPosition];
-            var trigger = terrain.GetComponent<ActionTrigger>();
-            trigger?.Action.Invoke(this);
         }
 
         public CastleMap Map { get; private set; }
@@ -198,7 +195,7 @@ namespace CastleOfTheWinds
                 throw new Exception($"Unknown map name {mapName}");
             }
 
-            MoveObject(Player, map, position);
+            MoveEntity(Player, map, position);
             
             Map = map;
 
@@ -243,7 +240,7 @@ namespace CastleOfTheWinds
 
         private bool MoveAndTick(Direction direction)
         {
-            if (!MoveObject(Player, Map, Player.Position + direction))
+            if (!MoveEntity(Player, Map, Player.Position + direction))
                 return false;
 
             ProcessTick();
@@ -279,18 +276,30 @@ namespace CastleOfTheWinds
             StateChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        private bool MoveObject(CastleObject entity, CastleMap toMap, Coord toCoordinates)
+        private bool MoveEntity(CastleObject entity, CastleMap toMap, Coord toCoordinates)
         {
             var fromMap = (CastleMap)entity.CurrentMap;
             var fromCoordinates = entity.Position;
 
-            if (fromMap != null && fromMap.BeforeObjectMove(this, entity, toMap, toCoordinates))
+            if (!toMap.Contains(toCoordinates))
             {
-                return true;
+                return false;
             }
 
-            if (!toMap.Contains(toCoordinates) || !toMap.WalkabilityView[toCoordinates])
+            if (!toMap.WalkabilityView[toCoordinates])
             {
+
+                if (entity == Player)
+                {
+                    var collisionTrigger = toMap.Terrain[toCoordinates].GetComponent<CollisionTrigger>();
+
+                    if (collisionTrigger != null)
+                    {
+                        collisionTrigger.Invoke(this, fromMap, fromCoordinates);
+                        return true;
+                    }
+                }
+
                 return false;
             }
 
@@ -308,8 +317,13 @@ namespace CastleOfTheWinds
 
             TriggerStateChanged();
 
-            toMap.AfterObjectMove(this, entity, fromMap, fromCoordinates);
-            
+            if (entity == Player)
+            {
+                toMap.CalculateFOV(Player.Position, 1);
+                var walkTrigger = toMap.Terrain[toCoordinates].GetComponent<WalkTrigger>();
+                walkTrigger?.Invoke(this, fromMap, fromCoordinates);
+            }
+
             return true;
         }
 

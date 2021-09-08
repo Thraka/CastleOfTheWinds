@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using CastleOfTheWinds.Maps;
 using CastleOfTheWinds.Objects;
 using GoRogue;
+using GoRogue.GameFramework;
 using GoRogue.MapViews;
 using Rectangle = System.Drawing.Rectangle;
 
@@ -69,7 +70,7 @@ namespace CastleOfTheWinds
 
         private void ProcessStateChange()
         {
-            RedrawMap();
+            UpdateMap();
             EnsurePlayerVisible();
             UpdateStats();
         }
@@ -90,30 +91,68 @@ namespace CastleOfTheWinds
             this.logTextBox.ScrollToCaret();
         }
         
-        private void RedrawMap()
+        private void UpdateMap()
         {
             var map = _game.Map;
-
-            var bitmap = new Bitmap(PixelsPerTile * map.Width, PixelsPerTile * map.Height);
-            var graphics = Graphics.FromImage(bitmap);
+            Bitmap bitmap;
+            Graphics graphics;
 
             if (map != _currentMap)
             {
-                this.mapPanel.Width = PixelsPerTile * map.Width;
-                this.mapPanel.Height = PixelsPerTile * map.Width;
+                this.mapPanel.Width = PixelsPerTile * (map.Width - 2);
+                this.mapPanel.Height = PixelsPerTile * (map.Height - 2);
 
-                graphics.Clear(Color.White);
-                PaintExposedTerrain(map, graphics, PixelsPerTile);
-                this.staticPicture.Image = bitmap;
+                bitmap = new Bitmap(this.mapPanel.Width, this.mapPanel.Height);
+                using (graphics = Graphics.FromImage(bitmap))
+                {
+                    graphics.Clear(Color.White);
+                    PaintExposedTerrain(map, graphics, PixelsPerTile);
+                    this.staticPicture.Image = bitmap;
+                }
 
-                bitmap = new Bitmap(PixelsPerTile * map.Width, PixelsPerTile * map.Height);
-                graphics = Graphics.FromImage(bitmap);
                 _currentMap = map;
             }
+            else
+            {
+                using (graphics = Graphics.FromImage(this.staticPicture.Image))
+                {
+                    PaintNewlyExposedTerrain(map, graphics, PixelsPerTile);
+                }
+            }
 
-            graphics.Clear(Color.Transparent);
-            PaintVisibleObjects(map, graphics, PixelsPerTile);
-            this.dynamicPicture.Image = bitmap;
+            bitmap = new Bitmap(this.mapPanel.Width, this.mapPanel.Height);
+            using (graphics = Graphics.FromImage(bitmap))
+            {
+                PaintVisibleObjects(map, graphics, PixelsPerTile);
+                this.dynamicPicture.Image = bitmap;
+            }
+        }
+
+        private void PaintNewlyExposedTerrain(CastleMap map, Graphics graphics, int scale)
+        {
+            foreach (var mapPosition in map.FOV.NewlySeen)
+            {
+                if (mapPosition.X == 0 || mapPosition.Y == 0 || mapPosition.X == map.Width - 1 || mapPosition.Y == map.Height - 1)
+                {
+                    continue;
+                }
+
+                var imagePosition = mapPosition - (1, 1);
+
+                if (map.Terrain[mapPosition] is not TerrainObject terrainObject)
+                {
+                    continue;
+                }
+
+                var scaledSize = terrainObject.Size * scale;
+
+                var image = terrainObject.GetImage();
+
+                if (image != null)
+                {
+                    graphics.DrawImage(image, imagePosition.X * scale, imagePosition.Y * scale, scaledSize.Width, scaledSize.Height);
+                }
+            }
         }
 
         private void EnsurePlayerVisible()
@@ -160,23 +199,28 @@ namespace CastleOfTheWinds
 
         private void PaintExposedTerrain(CastleMap map, Graphics graphics, int scale)
         {
-            foreach (var position in map.Terrain.Positions())
+            for (var x = 0; x < map.Width - 2; x++)
             {
-                if (map.Explored[position])
+                for (var y = 0; y < map.Height - 2; y++)
                 {
-                    if (map.Terrain[position] is not TerrainObject terrainObject)
+                    Coord imagePosition = (x, y);
+                    Coord mapPosition = imagePosition + (1, 1);
+
+                    if (map.Explored[mapPosition])
                     {
-                        continue;
-                    }
+                        if (map.Terrain[mapPosition] is not TerrainObject terrainObject)
+                        {
+                            continue;
+                        }
 
-                    var scaledSize = terrainObject.Size * scale;
+                        var scaledSize = terrainObject.Size * scale;
 
-                    var image = terrainObject.GetImage();
+                        var image = terrainObject.GetImage();
 
-                    if (image != null)
-                    {
-                        graphics.DrawImage(image, position.X * scale, position.Y * scale, scaledSize.Width,
-                            scaledSize.Height);
+                        if (image != null)
+                        {
+                            graphics.DrawImage(image, imagePosition.X * scale, imagePosition.Y * scale, scaledSize.Width, scaledSize.Height);
+                        }
                     }
                 }
             }
@@ -189,44 +233,51 @@ namespace CastleOfTheWinds
             var itemsMask = map.LayerMasker.Mask(MapLayers.Items);
             var creaturesMask = map.LayerMasker.Mask(MapLayers.Creatures);
 
-            foreach (var position in map.Positions())
+            for (var x = 0; x < map.Width - 2; x++)
             {
-                if (map.Explored[position])
+                for (var y = 0; y < map.Height - 2; y++)
                 {
-                    var scenery = map.GetObjects<CastleObject>(position, sceneryMask).LastOrDefault();
+                    Coord imagePosition = (x, y);
+                    Coord mapPosition = imagePosition + (1, 1);
 
-                    if (scenery != null)
+
+                    if (map.Explored[mapPosition])
                     {
-                        var image = scenery.GetImage();
-                        if (image != null)
-                            PaintObject(graphics, image, position, sizeOne, scale);
+                        var scenery = map.GetObjects<CastleObject>(mapPosition, sceneryMask).LastOrDefault();
+
+                        if (scenery != null)
+                        {
+                            var image = scenery.GetImage();
+                            if (image != null)
+                                PaintObject(graphics, image, imagePosition, sizeOne, scale);
+                        }
+
+                        var items = map.GetObjects<CastleObject>(mapPosition, itemsMask).ToArray();
+
+                        if (items.Length == 1)
+                        {
+                            var image = items[0].GetImage();
+                            if (image != null)
+                                PaintObject(graphics, image, imagePosition, sizeOne, scale);
+                        }
+                        else if (items.Length > 1)
+                        {
+                            var image = Resources.ReadImage("/items/pile.png");
+                            if (image != null)
+                                PaintObject(graphics, image, imagePosition, sizeOne, scale);
+                        }
                     }
 
-                    var items = map.GetObjects<CastleObject>(position, itemsMask).ToArray();
-
-                    if (items.Length == 1)
+                    if (map.FOV.BooleanFOV[mapPosition])
                     {
-                        var image = items[0].GetImage();
-                        if (image != null)
-                            PaintObject(graphics, image, position, sizeOne, scale);
-                    }
-                    else if (items.Length > 1)
-                    {
-                        var image = Resources.ReadImage("/items/pile.png");
-                        if (image != null)
-                            PaintObject(graphics, image, position, sizeOne, scale);
-                    }
-                }
+                        var creature = map.GetObjects<CastleObject>(mapPosition, creaturesMask).SingleOrDefault();
 
-                if (map.FOV.BooleanFOV[position])
-                {
-                    var creature = map.GetObjects<CastleObject>(position, creaturesMask).SingleOrDefault();
-
-                    if (creature != null)
-                    {
-                        var image = creature.GetImage();
-                        if (image != null)
-                            PaintObject(graphics, image, position, sizeOne, scale);
+                        if (creature != null)
+                        {
+                            var image = creature.GetImage();
+                            if (image != null)
+                                PaintObject(graphics, image, imagePosition, sizeOne, scale);
+                        }
                     }
                 }
             }

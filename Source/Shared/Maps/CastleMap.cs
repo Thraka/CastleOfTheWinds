@@ -19,20 +19,7 @@ namespace CastleOfTheWinds.Maps
 
         public string Name { get; }
 
-        /// <summary>
-        /// Process an action before moving 
-        /// </summary>
-        /// <returns>false if move is incomplete, true if the move is complete</returns>
-        public virtual bool BeforeObjectMove(Game game, CastleObject entity, Map toMap, Coord toCoordinates)
-        {
-            return false;
-        }
-
-        public virtual void AfterObjectMove(Game game, CastleObject entity, Map? fromMap, Coord fromCoordinates)
-        {
-        }
-
-        protected void AddTerrain(string terrain)
+        protected void AddTerrain(string terrain, bool allExplored = true)
         {
             var rows = terrain.Trim().Split('\n')
                 .Skip(3) // Trim off the horizontal ruler
@@ -58,6 +45,7 @@ namespace CastleOfTheWinds.Maps
                         '#' => new TerrainObject(position, "farmland", "/terrain/farmland.png", false, OneTile),
                         '.' => new TerrainObject(position, "grass", "/terrain/grass.png", true, OneTile),
                         '+' => new TerrainObject(position, "road", "/terrain/road.png", true, OneTile),
+                        ',' => new TerrainObject(position, "dungeon", "/terrain/dungeon.png", true, OneTile),
                         'a' => new TerrainObject(position, "road", "/terrain/grass_road_br.png", true, OneTile),
                         'b' => new TerrainObject(position, "road", "/terrain/grass_road_tl.png", true, OneTile),
                         'C' => new TerrainObject(position, "mountain", "/terrain/snow_mountain_bl.png", false, OneTile),
@@ -66,15 +54,26 @@ namespace CastleOfTheWinds.Maps
                         'F' => new TerrainObject(position, "mountain", "/terrain/snow_mountain_tl.png", false, OneTile),
                         'H' => new TerrainObject(position, "mountain", "/terrain/snow_mountain_left.png", false, OneTile),
                         'I' => new TerrainObject(position, "mountain", "/terrain/snow_mountain_right.png", false, OneTile),
+                        'N' => new TerrainObject(position, "rock", "/terrain/rock_dungeon_tl.png", false, OneTile),
+                        'O' => new TerrainObject(position, "rock", "/terrain/rock_dungeon_tr.png", false, OneTile),
+                        'P' => new TerrainObject(position, "rock", "/terrain/rock_dungeon_bl.png", false, OneTile),
+                        'Q' => new TerrainObject(position, "rock", "/terrain/rock_dungeon_br.png", false, OneTile),
+                        'R' => new TerrainObject(position, "rock", "/terrain/rock.png", false, OneTile),
                         'S' => new TerrainObject(position, "mountain", "/terrain/snow.png", false, OneTile),
                         'W' => new TerrainObject(position, "mountain", "/terrain/mountain_grass_bottom.png", false, OneTile),
                         'X' => new TerrainObject(position, "mountain", "/terrain/mountain.png", false, OneTile),
                         'Y' => new TerrainObject(position, "mountain", "/terrain/mountain_grass_br.png", false, OneTile),
                         'Z' => new TerrainObject(position, "mountain", "/terrain/mountain_grass_bl.png", false, OneTile),
+                        '>' => new TerrainObject(position, "Stairs down", "/scenery/stairs_down.png", true, OneTile),
                         _ => throw new ArgumentException($"Unknown terrain character {key} at {position}", nameof(terrain))
                     };
 
                     SetTerrain(terrainObject);
+
+                    if (allExplored)
+                    {
+                        Explored[position] = true;
+                    }
                 }
             }
         }
