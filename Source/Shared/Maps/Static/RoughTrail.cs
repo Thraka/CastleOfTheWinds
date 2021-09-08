@@ -16,6 +16,10 @@ namespace CastleOfTheWinds.Maps.Static
             AddSceneryObject((24, 0), "the entrance to an abandoned mine", "/scenery/mine.png", isWalkable: true);
             AddSceneryObject((43, 30), "A trampled garden", "/scenery/garden_broken.png", isWalkable: true);
 
+            // Fix the gate and farm door to be walkable
+            Terrain[(43, 32)].IsWalkable = true;
+            Terrain[(10, 40)].IsWalkable = true;
+
             foreach (var position in this.Positions())
             {
                 Explored[position] = true;
@@ -24,63 +28,58 @@ namespace CastleOfTheWinds.Maps.Static
 
         public override bool BeforeObjectMove(Game game, CastleObject entity, Map toMap, Coord toCoordinates)
         {
-            if (entity != game.Player)
+            if (entity == game.Player)
             {
-                return true;
+                if (toCoordinates == (24, -1))
+                {
+                    game.ChangeMap("Mine Level 0", (13, 0));
+                    return true;
+                }
+
+                if (toCoordinates == (10, 41))
+                {
+                    game.ChangeMap("A Tiny Hamlet", (13, 0));
+                    return true;
+                }
+
+                if (toCoordinates.X == -1 && toCoordinates.Y is 23 or 24)
+                {
+                    game.TriggerStory("Highway, Looking West");
+                }
+
+                if (toCoordinates.X == 48 && toCoordinates.Y is 23 or 24)
+                {
+                    game.TriggerStory("Highway, Looking East");
+                }
             }
 
-            if (toCoordinates == (24, -1))
-            {
-                game.ChangeMap("Mine Level 0", (13, 0));
-                return false;
-            }
 
-            if (toCoordinates == (10, 41))
-            {
-                game.ChangeMap("A Tiny Hamlet", (13, 0));
-                return false;
-            }
-
-            if (toCoordinates.X == -1 && toCoordinates.Y is 23 or 24)
-            {
-                game.TriggerStory("Highway, Looking West");
-                return false;
-            }
-
-            if (toCoordinates.X == 48 && toCoordinates.Y is 23 or 24)
-            {
-                game.TriggerStory("Highway, Looking East");
-                return false;
-            }
-
-            return true;
+            return false;
         }
 
         public override void AfterObjectMove(Game game, CastleObject entity, Map fromMap, Coord fromCoordinates)
         {
-            if (entity != game.Player)
+            if (entity == game.Player)
             {
-                return;
-            }
+                if (fromMap == this && entity.Position == (10, 40))
+                {
+                    game.ChangeMap("A Tiny Hamlet", (13, 0));
+                }
 
-            if (fromMap == this && entity.Position == (10, 40))
-            {
-                game.ChangeMap("A Tiny Hamlet", (13, 0));
-            }
+                if (fromMap == this && entity.Position == (24, 0))
+                {
+                    game.ChangeMap("Mine Level 0", (13, 0));
+                }
 
-            if (fromMap == this && entity.Position == (24, 0))
-            {
-                game.ChangeMap("Mine Level 0", (13, 0));
-            }
+                if (entity.Position == (24, 25))
+                {
+                    game.TriggerStory("Neglected highway");
+                }
 
-            if (entity.Position == (24, 25))
-            {
-                game.TriggerStory("Neglected highway");
-            }
-
-            if (entity.Position == (43, 32))
-            {
-                game.TriggerStory("Burning farm");
+                if (entity.Position == (43, 32))
+                {
+                    game.TriggerStory("Burning farm");
+                }
             }
         }
     }

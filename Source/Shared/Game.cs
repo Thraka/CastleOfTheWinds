@@ -82,7 +82,7 @@ namespace CastleOfTheWinds
                 }
                 .ToDictionary(x => x.Name);
 
-            ChangeMap("A Tiny Hamlet", (13, 17));
+            Map = ChangeMap("A Tiny Hamlet", (13, 17));
         }
 
         private void HandlePlayerMoved(object? sender, ItemMovedEventArgs<IGameObject> eventArgs)
@@ -119,15 +119,14 @@ namespace CastleOfTheWinds
 
         public bool MoveOrAttack(Direction direction)
         {
-            if (!Map.Contains(Player.Position + direction))
-            {
-                // moving outside the map
-                return false;
-            }
-
             if (MoveAndTick(direction))
             {
                 return true;
+            }
+
+            if (!Map.Contains(Player.Position + direction))
+            {
+                return false;
             }
 
             if (AttackAndTick(direction))
@@ -192,19 +191,22 @@ namespace CastleOfTheWinds
             return moved;
         }
 
-        internal void ChangeMap(string mapName, Coord position)
+        internal CastleMap ChangeMap(string mapName, Coord position)
         {
             if (!_maps.TryGetValue(mapName, out var map))
             {
-                Error($"Unknown map name {mapName}");
-                return;
+                throw new Exception($"Unknown map name {mapName}");
             }
 
             MoveObject(Player, map, position);
             
             Map = map;
 
-            StateChanged?.Invoke(this, EventArgs.Empty);
+            Map.CalculateFOV(Player.Position, 1);
+
+            TriggerStateChanged();
+
+            return map;
         }
 
         internal void TriggerStory(string sceneName)
@@ -282,40 +284,38 @@ namespace CastleOfTheWinds
             var fromMap = (CastleMap)entity.CurrentMap;
             var fromCoordinates = entity.Position;
 
-            if (fromMap != null)
+            if (fromMap != null && fromMap.BeforeObjectMove(this, entity, toMap, toCoordinates))
             {
-                if (!fromMap.BeforeObjectMove(this, entity, toMap, toCoordinates))
-                {
-                    return false;
-                }
-
-                if (toMap != fromMap)
-                {
-                    // before removing the entity from its current map, make sure it can be moved to the new map
-                    if (!toMap.WalkabilityView[toCoordinates])
-                    {
-                        return false;
-                    }
-
-                    fromMap.RemoveEntity(entity);
-                }
+                return true;
             }
 
-            entity.Position = toCoordinates;
+            if (!toMap.Contains(toCoordinates) || !toMap.WalkabilityView[toCoordinates])
+            {
+                return false;
+            }
 
             if (toMap != fromMap)
             {
+                // before removing the entity from its current map, make sure it can be moved to the new map
+                fromMap?.RemoveEntity(entity);
+                entity.Position = toCoordinates;
                 toMap.AddEntity(entity);
             }
-
-            toMap.AfterObjectMove(this, entity, fromMap, fromCoordinates);
-
-            if (entity == Player)
+            else
             {
-                toMap.CalculateFOV(Player.Position, 1);
+                entity.Position = toCoordinates;
             }
 
+            TriggerStateChanged();
+
+            toMap.AfterObjectMove(this, entity, fromMap, fromCoordinates);
+            
             return true;
+        }
+
+        private void TriggerStateChanged()
+        {
+            StateChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void Error(string message) => Log($"Error: {message}");

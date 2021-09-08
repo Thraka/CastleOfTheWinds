@@ -19,12 +19,16 @@ namespace CastleOfTheWinds.Maps
 
         public string Name { get; }
 
+        /// <summary>
+        /// Process an action before moving 
+        /// </summary>
+        /// <returns>false if move is incomplete, true if the move is complete</returns>
         public virtual bool BeforeObjectMove(Game game, CastleObject entity, Map toMap, Coord toCoordinates)
         {
-            return true;
+            return false;
         }
 
-        public virtual void AfterObjectMove(Game game, CastleObject entity, Map fromMap, Coord fromCoordinates)
+        public virtual void AfterObjectMove(Game game, CastleObject entity, Map? fromMap, Coord fromCoordinates)
         {
         }
 

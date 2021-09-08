@@ -10,11 +10,11 @@ using System.Windows.Forms;
 
 namespace CastleOfTheWinds
 {
-    public partial class ShrineForm : Form
+    public partial class CharacterDiagram : UserControl
     {
         private readonly Game _game;
 
-        public ShrineForm(Game game)
+        public CharacterDiagram(Game game)
         {
             _game = game;
             InitializeComponent();

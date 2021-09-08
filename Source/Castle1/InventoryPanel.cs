@@ -12,8 +12,11 @@ namespace CastleOfTheWinds
 {
     public partial class InventoryPanel : UserControl
     {
-        public InventoryPanel()
+        private readonly Game _game;
+
+        public InventoryPanel(Game game)
         {
+            _game = game;
             InitializeComponent();
         }
     }

@@ -29,8 +29,16 @@ namespace CastleOfTheWinds
         /// </summary>
         private void InitializeComponent()
         {
-            components = new System.ComponentModel.Container();
+            this.SuspendLayout();
+            // 
+            // InventoryPanel
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Name = "InventoryPanel";
+            this.Size = new System.Drawing.Size(886, 554);
+            this.ResumeLayout(false);
+
         }
 
         #endregion
