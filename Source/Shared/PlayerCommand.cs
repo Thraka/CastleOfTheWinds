@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace CastleOfTheWinds
+﻿namespace CastleOfTheWinds
 {
     public enum PlayerCommand
     {

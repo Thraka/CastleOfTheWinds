@@ -1,12 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
-using CastleOfTheWinds;
-
-namespace Castle1
+namespace CastleOfTheWinds
 {
     static class Program
     {

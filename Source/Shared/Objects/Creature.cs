@@ -1,6 +1,6 @@
 ﻿using GoRogue;
 
-namespace CastleOfTheWinds
+namespace CastleOfTheWinds.Objects
 {
     public class Creature : CastleObject
     {

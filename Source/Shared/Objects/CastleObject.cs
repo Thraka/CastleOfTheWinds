@@ -1,9 +1,8 @@
-﻿using GoRogue;
+﻿using System.Drawing;
+using GoRogue;
 using GoRogue.GameFramework;
 
-using System.Drawing;
-
-namespace CastleOfTheWinds
+namespace CastleOfTheWinds.Objects
 {
     public class CastleObject : GameObject
     {
@@ -18,7 +17,7 @@ namespace CastleOfTheWinds
 
         public string? ImagePath { get; set; }
 
-        public virtual Image? GetImage() => ImagePath == null ? null : Bitmaps.Read(ImagePath);
+        public virtual Image? GetImage() => ImagePath == null ? null : Resources.ReadImage(ImagePath);
 
         public override string ToString()
         {

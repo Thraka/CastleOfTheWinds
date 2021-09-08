@@ -1,9 +1,8 @@
-﻿using GoRogue;
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Drawing;
+using GoRogue;
 
-namespace CastleOfTheWinds
+namespace CastleOfTheWinds.Objects
 {
     public class TerrainObject : CastleObject
     {

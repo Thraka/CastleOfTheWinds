@@ -9,11 +9,11 @@
   </ItemGroup>
   
   <ItemGroup>
-    <None Remove="Bitmaps\**\*.png" />
+    <None Remove="Resources\**\*.*" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Bitmaps\**\*.png" />
+    <EmbeddedResource Include="Resources\**\*.*" />
   </ItemGroup>
 
 </Project>

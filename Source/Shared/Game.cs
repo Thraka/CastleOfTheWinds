@@ -2,6 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using CastleOfTheWinds.Maps;
+using CastleOfTheWinds.Maps.Static;
+using CastleOfTheWinds.Objects;
+using GoRogue.GameFramework;
 using GoRogue.MapViews;
 
 namespace CastleOfTheWinds
@@ -10,14 +14,56 @@ namespace CastleOfTheWinds
     {
         private static readonly TimeSpan TickDuration = TimeSpan.FromSeconds(2.5);
         private int _currentTick;
+        private Dictionary<string, CastleMap> _maps;
+        private Dictionary<string, StoryScene> _storyScenes;
+        private List<string> _triggeredScenes;
 
         public Game()
         {
+            _triggeredScenes = new();
+            _storyScenes = new()
+            {
+                ["Locked farm door"] = new StoryScene
+                {
+                    OnlyPlayOnce = false,
+                    PlayOnLog = true,
+                    Pages = new[] { "The door to the farm is locked." }
+                },
+                ["Highway, Looking East"] = new StoryScene
+                {
+                    OnlyPlayOnce = true,
+                    PlayOnLog = true,
+                    Pages = new[] { "You look at the highway vanishing in the distance, and feel no need to continue." }
+                },
+                ["Highway, Looking West"] = new StoryScene
+                {
+                    OnlyPlayOnce = true,
+                    PlayOnLog = true,
+                    Pages = new[] { "You look at the highway vanishing in the distance, and feel no need to continue." }
+                },
+                ["Enter a rough trail"] = new StoryScene
+                {
+                    OnlyPlayOnce = true,
+                    PlayOnLog = true,
+                    Pages = new[] { "You see a badly neglected highway, and a trail leading into the mountains." }
+                },
+                ["Burning farm"] = new StoryScene
+                {
+                    OnlyPlayOnce = true,
+                    PlayOnLog = false,
+                    Pages = new[]{ Resources.ReadText("Burning farm.txt") }
+                },
+                ["Neglected highway"] = new StoryScene
+                {
+                    OnlyPlayOnce = true,
+                    PlayOnLog = true,
+                    Pages = new [] { "You see a badly neglected highway, and a trail leading into the mountains." }
+                },
+            };
+
             Logs = new List<string>();
 
-            Map = FixedMaps.Village;
-
-            Player = new Creature((13, 17), description: "you", imagePath: "/creatures/human_male")
+            Player = new Creature((1, 1), description: "you", imagePath: "/creatures/human_male.png")
             {
                 Mana = 7,
                 ManaMax = 7,
@@ -27,11 +73,37 @@ namespace CastleOfTheWinds
                 SpeedMax = 200
             };
 
-            Map.AddEntity(Player);
-            Map.CalculateFOV(Player.Position, 1);
+            Player.Moved += HandlePlayerMoved;
+
+            _maps = new CastleMap[]
+                {
+                    new TinyHamlet(),
+                    new RoughTrail()
+                }
+                .ToDictionary(x => x.Name);
+
+            ChangeMap("A Tiny Hamlet", (13, 17));
         }
 
-        public CastleMap Map { get; }
+        private void HandlePlayerMoved(object? sender, ItemMovedEventArgs<IGameObject> eventArgs)
+        {
+            var map = Player.CurrentMap;
+
+            Trace(Player.Position.ToString());
+
+            if (map == null)
+            {
+                return;
+            }
+
+            map.CalculateFOV(Player.Position, 1);
+
+            var terrain = map.Terrain[eventArgs.NewPosition];
+            var trigger = terrain.GetComponent<ActionTrigger>();
+            trigger?.Action.Invoke(this);
+        }
+
+        public CastleMap Map { get; private set; }
 
         public Creature Player { get; }
 
@@ -41,8 +113,9 @@ namespace CastleOfTheWinds
 
         public event EventHandler<string>? MessageLogged;
 
-        public event EventHandler? StateChanged;
+        public event EventHandler<string>? StoryProgressed;
 
+        public event EventHandler? StateChanged;
 
         public bool MoveOrAttack(Direction direction)
         {
@@ -51,7 +124,7 @@ namespace CastleOfTheWinds
                 // moving outside the map
                 return false;
             }
-            
+
             if (MoveAndTick(direction))
             {
                 return true;
@@ -61,16 +134,21 @@ namespace CastleOfTheWinds
             {
                 return true;
             }
-            
+
             // we can't move that way, and we can't attack something in that direction. Why are we blocked?
             var blockingObject = Map.GetObjects<CastleObject>(Player.Position + direction)
                 .Reverse()
                 .FirstOrDefault(x => !x.IsWalkable);
-            
-            Log(blockingObject != null
-                ? $"Blocked by {blockingObject.Description}"
-                : "Error: Unexpected inability to MoveOrAttack");
 
+            if (blockingObject != null)
+            {
+                Trace($"Blocked by {blockingObject.Description}");
+            }
+            else
+            {
+                Error("Unexpected inability to MoveOrAttack");
+            }
+            
             return false;
         }
 
@@ -99,9 +177,14 @@ namespace CastleOfTheWinds
                     // we can't move that way, and we can't attack something in that direction. Why are we blocked?
                     var targetTerrain = Map.GetTerrain<CastleObject>(Player.Position + direction);
 
-                    Log(!targetTerrain.IsWalkable
-                        ? $"Blocked by {targetTerrain.Description}"
-                        : "Error: Unexpected inability to MoveOrAttack");
+                    if (!targetTerrain.IsWalkable)
+                    {
+                        Trace($"Blocked by {targetTerrain.Description}");
+                    }
+                    else
+                    {
+                        Error("Unexpected inability to Attack after sprint");
+                    }
                 }
             }
 
@@ -109,10 +192,56 @@ namespace CastleOfTheWinds
             return moved;
         }
 
+        internal void ChangeMap(string mapName, Coord position)
+        {
+            if (!_maps.TryGetValue(mapName, out var map))
+            {
+                Error($"Unknown map name {mapName}");
+                return;
+            }
+
+            MoveObject(Player, map, position);
+            
+            Map = map;
+
+            StateChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        internal void TriggerStory(string sceneName)
+        {
+            if (!_storyScenes.TryGetValue(sceneName, out var scene))
+            {
+                Error($"Unknown story scene {sceneName}");
+            }
+
+            if (_triggeredScenes.Contains(sceneName) && scene!.OnlyPlayOnce)
+            {
+                return;
+            }
+
+            foreach (var storyPage in scene!.Pages)
+            {
+                if (scene.PlayOnLog)
+                {
+                    Log(storyPage);
+                }
+                else
+                {
+                    StoryProgressed?.Invoke(this, storyPage);
+                }
+            }
+
+            _triggeredScenes.Add(sceneName);
+        }
+
+        internal void LoadStore(string storeName)
+        {
+            Log($"Entering store {storeName}");
+        }
 
         private bool MoveAndTick(Direction direction)
         {
-            if (!Player.MoveIn(direction)) 
+            if (!MoveObject(Player, Map, Player.Position + direction))
                 return false;
 
             ProcessTick();
@@ -148,11 +277,62 @@ namespace CastleOfTheWinds
             StateChanged?.Invoke(this, EventArgs.Empty);
         }
 
+        private bool MoveObject(CastleObject entity, CastleMap toMap, Coord toCoordinates)
+        {
+            var fromMap = (CastleMap)entity.CurrentMap;
+            var fromCoordinates = entity.Position;
+
+            if (fromMap != null)
+            {
+                if (!fromMap.BeforeObjectMove(this, entity, toMap, toCoordinates))
+                {
+                    return false;
+                }
+
+                if (toMap != fromMap)
+                {
+                    // before removing the entity from its current map, make sure it can be moved to the new map
+                    if (!toMap.WalkabilityView[toCoordinates])
+                    {
+                        return false;
+                    }
+
+                    fromMap.RemoveEntity(entity);
+                }
+            }
+
+            entity.Position = toCoordinates;
+
+            if (toMap != fromMap)
+            {
+                toMap.AddEntity(entity);
+            }
+
+            toMap.AfterObjectMove(this, entity, fromMap, fromCoordinates);
+
+            if (entity == Player)
+            {
+                toMap.CalculateFOV(Player.Position, 1);
+            }
+
+            return true;
+        }
+
+        private void Error(string message) => Log($"Error: {message}");
+
+        private void Trace(string message) => Log($"Trace: {message}");
 
         private void Log(string message)
         {
             Logs.Add(message);
             MessageLogged?.Invoke(this, message);
         }
+    }
+
+    internal class StoryScene
+    {
+        public bool OnlyPlayOnce { get; set; }
+        public bool PlayOnLog { get; set; }
+        public string[] Pages { get; set; } = Array.Empty<string>();
     }
 }
